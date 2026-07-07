@@ -37,6 +37,7 @@
         padding: 0;
       }
       body {
+        min-height: 100vh;
         background:
           repeating-linear-gradient(
             to bottom,
@@ -51,9 +52,10 @@
         -webkit-font-smoothing: antialiased;
       }
       .wrap {
-        max-width: 920px;
+        max-width: 1200px;
+        width: min(100%, 1200px);
         margin: 0 auto;
-        padding: 36px 20px 80px;
+        padding: 42px 24px 80px;
       }
 
       /* Header */
@@ -114,7 +116,7 @@
         border-radius: 2px;
         box-shadow: var(--shadow);
         position: relative;
-        padding: 26px 26px 22px;
+        padding: 34px 34px 28px;
         margin-bottom: 36px;
       }
       .admit-card::before {
@@ -131,9 +133,9 @@
       }
       .grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-        gap: 18px 20px;
-        margin-top: 12px;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 20px 24px;
+        margin-top: 18px;
       }
       .field label {
         display: block;
