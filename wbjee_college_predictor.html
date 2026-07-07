@@ -165,6 +165,19 @@
       .field-full {
         grid-column: 1/-1;
       }
+      .checkbox-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 13px;
+        letter-spacing: 0.02em;
+        color: var(--ink-soft);
+      }
+      .checkbox-label input {
+        width: auto;
+        margin: 0;
+      }
       .actions {
         display: flex;
         align-items: center;
@@ -442,6 +455,12 @@
               id="college"
               placeholder="e.g. netaji, jadavpur, techno"
             />
+          </div>
+          <div class="field field-full">
+            <label class="checkbox-label">
+              <input type="checkbox" id="use-2025" />
+              Show only 2025 closing rank results
+            </label>
           </div>
           <div class="field field-full">
             <label for="branch">Branch keyword (optional)</label>
@@ -29672,6 +29691,10 @@
         return { d, w, h };
       }
 
+      function use2025Mode() {
+        return document.getElementById("use-2025").checked;
+      }
+
       function render() {
         const rank = parseInt(document.getElementById("rank").value, 10);
         if (!rank || rank < 1) {
@@ -29685,6 +29708,7 @@
           quotaSel.value === "ANY" ? null : parseInt(quotaSel.value, 10);
         const sIdxVal = seatSel.value;
         const stIdxVal = streamSel.value;
+        const use2025 = use2025Mode();
         const collegeKw = document
           .getElementById("college")
           .value.trim()
@@ -29693,6 +29717,7 @@
           .getElementById("branch")
           .value.trim()
           .toLowerCase();
+        const use2025 = use2025Mode();
 
         let matches = [];
         for (const r of recs) {
@@ -29721,7 +29746,9 @@
           if (collegeKw && !textContains(instName, collegeKw)) continue;
           const progName = progs[progIdx];
           if (branchKw && !textContains(progName, branchKw)) continue;
-          const verdict = verdictFor(rank, avg);
+          const predicted = use2025 ? y25 : avg;
+          if (predicted == null) continue;
+          const verdict = verdictFor(rank, predicted);
           if (!verdict) continue;
           matches.push({
             instIdx,
@@ -29733,18 +29760,19 @@
             latestYr,
             trendCode,
             yrs: [y22, y23, y24, y25],
+            predicted,
             verdict,
           });
         }
 
-        matches.sort((a, b) => a.avg - b.avg);
+        matches.sort((a, b) => a.predicted - b.predicted);
         lastResults = matches;
 
         const counts = { safe: 0, moderate: 0, reach: 0 };
         matches.forEach((m) => counts[m.verdict]++);
 
         let html = "";
-        html += `<div class="results-head"><h2>Predicted branches</h2><span class="results-count">${matches.length} match${matches.length === 1 ? "" : "es"} found</span></div>`;
+        html += `<div class="results-head"><h2>${use2025 ? "2025 predicted branches" : "Predicted branches"}</h2><span class="results-count">${matches.length} match${matches.length === 1 ? "" : "es"} found</span></div>`;
         html += `<div class="summary">`;
         html += chip("ALL", "All", matches.length);
         html += chip("safe", "Safe", counts.safe);
@@ -29770,6 +29798,7 @@
       function renderSlips() {
         const container = document.getElementById("slips");
         if (!container) return;
+        const use2025 = use2025Mode();
         document
           .querySelectorAll(".chip")
           .forEach((el) =>
@@ -29803,14 +29832,22 @@
             const sparkSvg = spark
               ? `<svg class="spark" width="${spark.w}" height="${spark.h}" viewBox="0 0 ${spark.w} ${spark.h}"><path d="${spark.d}" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>`
               : "";
+            const closingLabel = use2025
+              ? "Closing rank 2025"
+              : `Closing rank ${m.latestYr}`;
+            const closingValue = use2025 ? m.yrs[3] : m.latest;
+            const avgLabel = use2025
+              ? "2025 closing rank"
+              : "4-yr weighted avg";
+            const avgValue = use2025 ? m.predicted : m.avg;
             return `<div class="slip ${m.verdict}">
       <div class="inst">${inst}</div>
       <div class="prog">${prog}</div>
       <div class="tags"><span class="tag">${stream}</span><span class="tag">${seat}</span></div>
       <div class="stamp ${m.verdict}">${verdictLabel(m.verdict)}</div>
       <div class="rankline">
-        <span>Closing rank ${m.latestYr}: <span class="closing">${m.latest}</span></span>
-        <span>4-yr weighted avg: <span class="closing">${m.avg}</span></span>
+        <span>${closingLabel}: <span class="closing">${closingValue}</span></span>
+        <span>${avgLabel}: <span class="closing">${avgValue}</span></span>
         <span class="trend ${trendCls}">${trendTxt}</span>
         ${sparkSvg}
       </div>
